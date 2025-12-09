@@ -43,6 +43,11 @@ export interface Product {
   discountType?: DiscountType;
   discountValue?: number;
   discountExpiresAt?: string; // ISO date string
+
+  // NOVAS PROPRIEDADES PARA LANÇAMENTOS
+  isLaunch?: boolean;
+  launchExpiresAt?: string; // ISO date string
+  launchOrder?: number; // Ordem de prioridade
 }
 
 export interface StockMovement {

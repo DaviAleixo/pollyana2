@@ -160,6 +160,34 @@ const mockProducts: Omit<Product, 'id'>[] = [
     visivel: true,
     estoque: 11,
   },
+  // NOVO PRODUTO DE LANÇAMENTO (Prioridade 1)
+  {
+    nome: 'Blusa de Seda Premium (Lançamento)',
+    preco: 299.90,
+    descricao: 'Nova blusa de seda com caimento perfeito.',
+    imagem: 'https://images.pexels.com/photos/1065084/pexels-photo-1065084.jpeg?auto=format&fit=crop&w=600&q=80',
+    categoriaId: 4,
+    ativo: true,
+    visivel: true,
+    estoque: 25,
+    isLaunch: true,
+    launchOrder: 1,
+    launchExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // Expira em 30 dias
+  },
+  // NOVO PRODUTO DE LANÇAMENTO (Prioridade 2, expira em 1 dia)
+  {
+    nome: 'Shorts Jeans Destroyed (Lançamento)',
+    preco: 149.90,
+    descricao: 'Shorts destroyed, tendência da estação.',
+    imagem: 'https://images.pexels.com/photos/1936854/pexels-photo-1936854.jpeg?auto=format&fit=crop&w=600&q=80',
+    categoriaId: 6,
+    ativo: true,
+    visivel: true,
+    estoque: 18,
+    isLaunch: true,
+    launchOrder: 2,
+    launchExpiresAt: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), // Expira em 1 dia
+  },
 ];
 
 // Banners mockados para inicialização

@@ -23,6 +23,7 @@ import BannersList from './admin/banners/BannersList';
 import BannerForm from './admin/banners/BannerForm';
 import ProtectedRoute from './components/ProtectedRoute';
 import WhatsAppButton from './components/WhatsAppButton';
+import NewArrivalsCarousel from './components/NewArrivalsCarousel'; // NOVO IMPORT
 import { initializeData } from './utils/initializeData';
 import { authService } from './services/auth.service';
 import { categoriesService } from './services/categories.service';
@@ -89,6 +90,10 @@ function App() {
                 <div className="px-4 pb-8 max-w-7xl mx-auto"> {/* Este div da SearchBar agora está vazio e pode ser removido se não houver outro conteúdo */}
                   {/* SearchBar foi movida para Navbar */}
                 </div>
+                
+                {/* NOVO CARROSSEL DE LANÇAMENTOS - SÓ APARECE SE CATEGORIA FOR 'TODOS' (ID 1) */}
+                {selectedCategory === 1 && <NewArrivalsCarousel />}
+
                 <ProductCatalog
                   allProducts={allProducts}
                   categories={categories}

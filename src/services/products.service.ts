@@ -23,6 +23,39 @@ class ProductsService {
     return this.getAll().filter((p) => p.visivel && p.ativo);
   }
 
+  // Verifica se um produto é um lançamento válido (ativo, marcado como lançamento e não expirado)
+  private isLaunchValid(product: Product): boolean {
+    if (!product.isLaunch || !product.ativo || !product.visivel) {
+      return false;
+    }
+    if (product.launchExpiresAt) {
+      const expirationDate = new Date(product.launchExpiresAt);
+      if (expirationDate < new Date()) {
+        return false; // Lançamento expirado
+      }
+    }
+    return true;
+  }
+
+  // Obter produtos de lançamento válidos, ordenados por prioridade
+  getLaunches(): Product[] {
+    const allProducts = this.getAll();
+    const validLaunches = allProducts.filter(this.isLaunchValid);
+
+    // Ordenar: prioridade (menor número primeiro), depois por ID (para estabilidade)
+    validLaunches.sort((a, b) => {
+      const orderA = a.launchOrder ?? Infinity;
+      const orderB = b.launchOrder ?? Infinity;
+
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.id - b.id;
+    });
+
+    return validLaunches;
+  }
+
   // Obter produto por ID
   getById(id: number): Product | undefined {
     const products = this.getAll();

@@ -39,6 +39,11 @@ export default function ProductFormNew() {
   const [discountValue, setDiscountValue] = useState<number>(0);
   const [discountExpiresAt, setDiscountExpiresAt] = useState<string>('');
 
+  // NOVOS ESTADOS PARA LANÇAMENTO
+  const [isLaunch, setIsLaunch] = useState(false);
+  const [launchExpiresAt, setLaunchExpiresAt] = useState<string>('');
+  const [launchOrder, setLaunchOrder] = useState<number>(0);
+
   const [formData, setFormData] = useState({
     nome: '',
     preco: 0,
@@ -87,6 +92,11 @@ export default function ProductFormNew() {
         setDiscountType(product.discountType || 'percentage');
         setDiscountValue(product.discountValue || 0);
         setDiscountExpiresAt(product.discountExpiresAt || '');
+
+        // Inicializar estados de lançamento
+        setIsLaunch(product.isLaunch || false);
+        setLaunchExpiresAt(product.launchExpiresAt || '');
+        setLaunchOrder(product.launchOrder || 0);
 
         const productCategory = fetchedAllCategories.find(c => c.id === product.categoriaId);
         if (productCategory) {
@@ -407,6 +417,12 @@ export default function ProductFormNew() {
       }
     }
 
+    // Validação do lançamento
+    if (isLaunch && launchExpiresAt && new Date(launchExpiresAt) < new Date()) {
+      alert('A data de expiração do lançamento deve ser no futuro.');
+      return;
+    }
+
 
     const estoqueTotal = variants.reduce((sum, v) => sum + v.estoque, 0);
 
@@ -422,6 +438,10 @@ export default function ProductFormNew() {
       discountType: discountActive ? discountType : undefined,
       discountValue: discountActive ? discountValue : undefined,
       discountExpiresAt: discountActive ? discountExpiresAt : undefined,
+      // Dados de lançamento
+      isLaunch: isLaunch,
+      launchExpiresAt: isLaunch && launchExpiresAt ? launchExpiresAt : undefined,
+      launchOrder: isLaunch ? launchOrder : undefined,
     };
 
     console.log('ProductFormNew.handleSubmit() - Product data being saved:', {
@@ -429,6 +449,9 @@ export default function ProductFormNew() {
       nome: productData.nome,
       categoriaId: productData.categoriaId,
       estoque: productData.estoque,
+      isLaunch: productData.isLaunch,
+      launchExpiresAt: productData.launchExpiresAt,
+      launchOrder: productData.launchOrder,
       // ... other relevant fields
     });
 
@@ -860,6 +883,55 @@ export default function ProductFormNew() {
               className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:border-black resize-none"
               placeholder="Descreva o produto..."
             ></textarea>
+          </div>
+
+          {/* Seção de Lançamento */}
+          <div className="md:col-span-2 border-t border-gray-200 pt-6 mt-6">
+            <h2 className="text-xl font-bold text-black mb-4">Configuração de Lançamento</h2>
+            <div className="space-y-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isLaunch}
+                  onChange={(e) => setIsLaunch(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-medium">Marcar como lançamento</span>
+              </label>
+
+              {isLaunch && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Ordem de Prioridade (0 = Mais prioritário)
+                    </label>
+                    <input
+                      type="number"
+                      value={launchOrder}
+                      onChange={(e) => setLaunchOrder(parseInt(e.target.value) || 0)}
+                      min="0"
+                      className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:border-black"
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Data de Expiração (opcional)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={launchExpiresAt ? new Date(launchExpiresAt).toISOString().slice(0, 16) : ''}
+                      onChange={(e) => setLaunchExpiresAt(new Date(e.target.value).toISOString())}
+                      className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:border-black"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      O produto sairá da seção de lançamentos automaticamente após esta data.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Seção de Desconto do Produto */}

@@ -259,6 +259,8 @@ export default function ProductCatalog({ allProducts, categories, selectedCatego
           ) : (
             filteredProducts.map((product) => {
               const { originalPrice, discountedPrice, isDiscountActive, savingsPercentage, countdown, discountType } = getDiscountDetails(product);
+              // Verifica se é um lançamento válido (ativo e não expirado)
+              const isLaunch = product.isLaunch && product.launchExpiresAt && new Date(product.launchExpiresAt) > new Date();
 
               return (
                 <div
@@ -275,8 +277,13 @@ export default function ProductCatalog({ allProducts, categories, selectedCatego
                         (e.target as HTMLImageElement).src = 'https://via.placeholder.com/600x600?text=Sem+Imagem';
                       }}
                     />
+                    {isLaunch && (
+                      <span className="absolute top-3 left-3 bg-black text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
+                        NOVO
+                      </span>
+                    )}
                     {isDiscountActive && (
-                      <span className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
+                      <span className={`absolute top-3 ${isLaunch ? 'right-3' : 'left-3'} bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md`}>
                         {discountType === 'percentage' && savingsPercentage ? `${savingsPercentage}% OFF` : 'Promoção'}
                       </span>
                     )}
