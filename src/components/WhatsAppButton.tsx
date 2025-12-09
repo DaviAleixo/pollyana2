@@ -5,8 +5,8 @@ export default function WhatsAppButton() {
   const [isHovered, setIsHovered] = useState(false);
 
   // Número do WhatsApp da loja
-  const whatsappNumber = '5531982607426';
-  const whatsappMessage = 'Olá! Vim do site da Pollyana Basic Chic e gostaria de mais informações.';
+  const whatsappNumber = '5531983921200';
+  const whatsappMessage = 'Ola! Vim do site da Pollyana Basic Chic e gostaria de mais informacoes.';
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
 
   return (

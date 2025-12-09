@@ -1,84 +1,93 @@
-import { Instagram, Facebook, Mail } from 'lucide-react';
+import { Instagram, Phone } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-black text-white py-12 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Grid de informações do rodapé */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-          {/* Logo e descrição */}
+    <footer className="bg-gradient-to-b from-gray-900 to-black text-white">
+      <div className="max-w-6xl mx-auto px-4 py-12 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
           <div className="text-center md:text-left">
-            <h3 className="font-serif text-2xl font-bold mb-3 tracking-wide">
+            <h3 className="font-serif text-2xl md:text-3xl font-bold mb-4 tracking-wide">
               Pollyana Basic Chic
             </h3>
-            <p className="text-white/70 text-sm font-light leading-relaxed">
-              Moda básica, moderna e atemporal para mulheres reais.
+            <p className="text-white/60 text-sm leading-relaxed max-w-xs mx-auto md:mx-0">
+              Moda feminina com estilo, qualidade e preços acessiveis. Vista-se com elegancia todos os dias.
             </p>
           </div>
 
-          {/* Links úteis */}
           <div className="text-center">
-            <h4 className="font-semibold mb-3 text-lg">Links Úteis</h4>
-            <ul className="space-y-2 text-sm text-white/70">
+            <h4 className="font-semibold mb-4 text-base uppercase tracking-wider text-white/90">Links</h4>
+            <ul className="space-y-3 text-sm text-white/60">
               <li>
-                <a href="#catalog" className="hover:text-white transition-colors">
-                  Catálogo
+                <a href="#catalog" className="hover:text-white transition-colors duration-200">
+                  Catalogo
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Política de Privacidade
+                <a href="#" className="hover:text-white transition-colors duration-200">
+                  Politica de Privacidade
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Política de Trocas
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Termos de Uso
+                <a href="#" className="hover:text-white transition-colors duration-200">
+                  Politica de Trocas
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Redes sociais */}
           <div className="text-center md:text-right">
-            <h4 className="font-semibold mb-3 text-lg">Siga-nos</h4>
-            <div className="flex justify-center md:justify-end gap-4">
+            <h4 className="font-semibold mb-4 text-base uppercase tracking-wider text-white/90">Contato</h4>
+            <div className="flex flex-col items-center md:items-end gap-4">
               <a
-                href="#"
-                className="p-2 bg-white/10 hover:bg-white/20 transition-colors rounded-full" // Ícones arredondados
-                aria-label="Instagram"
+                href="https://instagram.com/pollyana.bc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-white/60 hover:text-white transition-colors duration-200"
               >
                 <Instagram className="w-5 h-5" strokeWidth={1.5} />
+                <span className="text-sm">@pollyana.bc</span>
               </a>
               <a
-                href="#"
-                className="p-2 bg-white/10 hover:bg-white/20 transition-colors rounded-full"
-                aria-label="Facebook"
+                href="https://wa.me/5531983921200"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-white/60 hover:text-white transition-colors duration-200"
               >
-                <Facebook className="w-5 h-5" strokeWidth={1.5} />
-              </a>
-              <a
-                href="#"
-                className="p-2 bg-white/10 hover:bg-white/20 transition-colors rounded-full"
-                aria-label="Email"
-              >
-                <Mail className="w-5 h-5" strokeWidth={1.5} />
+                <Phone className="w-5 h-5" strokeWidth={1.5} />
+                <span className="text-sm">(31) 9 8392-1200</span>
               </a>
             </div>
           </div>
         </div>
 
-        {/* Linha divisória */}
-        <div className="border-t border-white/10 pt-6 text-center text-sm text-white/60">
-          <p>
-            © {currentYear} Pollyana Basic Chic. Todos os direitos reservados.
-          </p>
+        <div className="border-t border-white/10 mt-10 pt-8">
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-white/50 text-sm">
+              {currentYear} Pollyana Basic Chic. Todos os direitos reservados.
+            </p>
+            <p className="text-white/40 text-xs">
+              Desenvolvido por{' '}
+              <a
+                href="https://instagram.com/davialeixo_nogueira"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/60 hover:text-white transition-colors duration-200 underline underline-offset-2"
+              >
+                Davi Aleixo
+              </a>
+              {' | '}
+              <a
+                href="https://wa.me/5531982607426"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/60 hover:text-white transition-colors duration-200 underline underline-offset-2"
+              >
+                31 9 8260-7426
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>

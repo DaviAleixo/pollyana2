@@ -239,11 +239,13 @@ export default function ProductCatalog({ allProducts, categories, selectedCatego
 
         {/* Carrossel de Lançamentos (Aparece abaixo dos banners) */}
         {shouldShowLaunches && (
-          <NewArrivalsCarousel />
+          <div className="mb-8">
+            <NewArrivalsCarousel />
+          </div>
         )}
 
         {/* Filtro de Ordenação */}
-        <div className="flex justify-end mb-8">
+        <div className="flex justify-end mb-8 mt-8">
           <Select onValueChange={(value: SortOption) => setSortOption(value)} value={sortOption}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Ordenar por" />

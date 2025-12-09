@@ -1,6 +1,5 @@
 import { Truck, RefreshCw, MessageCircle } from 'lucide-react';
 
-// Lista de benefícios com ícones
 const benefits = [
   {
     icon: Truck,
@@ -21,35 +20,30 @@ const benefits = [
 
 export default function Benefits() {
   return (
-    <section className="bg-white py-16 md:py-20 px-4">
+    <section className="bg-gray-50 py-12 md:py-16 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Grid de benefícios */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8"> {/* Ajustado para 2 colunas no sm e 3 no md */}
-          {benefits.map((benefit, index) => (
-            <div
-              key={index}
-              className="text-center flex flex-col items-center group bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300" // Estilo de card
-            >
-              {/* Ícone com efeito hover */}
-              <div className="mb-4 p-4 bg-black group-hover:bg-gray-800 transition-colors duration-300 rounded-full shadow-md">
-                <benefit.icon className="w-8 h-8 text-white" strokeWidth={1.5} />
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4">
+            {benefits.map((benefit, index) => (
+              <div
+                key={index}
+                className="flex flex-col md:flex-row items-center text-center md:text-left gap-4"
+              >
+                <div className="p-3 bg-black rounded-full flex-shrink-0">
+                  <benefit.icon className="w-6 h-6 text-white" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-black text-base md:text-lg">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-gray-500 text-sm">
+                    {benefit.description}
+                  </p>
+                </div>
               </div>
-
-              {/* Título do benefício */}
-              <h3 className="font-serif text-xl md:text-2xl font-semibold text-black mb-2">
-                {benefit.title}
-              </h3>
-
-              {/* Descrição */}
-              <p className="text-gray-600 text-sm max-w-xs mx-auto">
-                {benefit.description}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-
-        {/* Linha divisória decorativa */}
-        <div className="mt-12 w-full h-px bg-gray-200" />
       </div>
     </section>
   );
