@@ -5,23 +5,34 @@ import { Product } from '../types';
 import LaunchProductCard from './LaunchProductCard';
 import ProductModal from './ProductModal';
 import { clicksService } from '../services/clicks.service';
-import SectionTitle from './SectionTitle'; // NOVO IMPORT
+import SectionTitle from './SectionTitle';
 
 export default function NewArrivalsCarousel() {
   const [launches, setLaunches] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const loadLaunches = () => {
-      const fetchedLaunches = productsService.getLaunches();
-      setLaunches(fetchedLaunches);
+    const loadLaunches = async () => {
+      try {
+        setLoading(true);
+        const fetchedLaunches = await productsService.getLaunches();
+        // Garante que sempre seja um array
+        setLaunches(Array.isArray(fetchedLaunches) ? fetchedLaunches : []);
+      } catch (error) {
+        console.error('Erro ao carregar lançamentos:', error);
+        setLaunches([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadLaunches();
-    window.addEventListener('storage', loadLaunches);
 
+    // Recarrega quando houver mudanças no storage
+    window.addEventListener('storage', loadLaunches);
     return () => {
       window.removeEventListener('storage', loadLaunches);
     };
@@ -46,23 +57,34 @@ export default function NewArrivalsCarousel() {
   // Implementação simples de scroll horizontal
   const scroll = (direction: 'left' | 'right') => {
     if (carouselRef.current) {
-      const scrollAmount = direction === 'right' ? 300 : -300; // Scroll de 300px
+      const scrollAmount = direction === 'right' ? 300 : -300;
       carouselRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
 
-  if (launches.length === 0) {
-    return null;
+  // Exibe loading enquanto carrega
+  if (loading) {
+    return (
+      <section className="bg-gray-50 py-12 md:py-16 px-4">
+        <div className="max-w-7xl mx-auto">
+          <SectionTitle title="LANÇAMENTOS DA LOJA" className="mb-10" />
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
-  // Usamos apenas os itens reais, sem duplicação
-  const carouselItems = launches;
+  // Não exibe nada se não houver lançamentos
+  if (!Array.isArray(launches) || launches.length === 0) {
+    return null;
+  }
 
   return (
     <section className="bg-gray-50 py-12 md:py-16 px-4">
       <div className="max-w-7xl mx-auto">
         <SectionTitle title="LANÇAMENTOS DA LOJA" className="mb-10" />
-
         <div className="relative">
           {/* Botões de navegação */}
           <button
@@ -86,7 +108,7 @@ export default function NewArrivalsCarousel() {
             className="flex overflow-x-scroll space-x-4 sm:space-x-6 pb-4 px-2 -mx-2 md:px-0 md:-mx-0 snap-x snap-mandatory scrollbar-hide"
             style={{ scrollBehavior: 'smooth' }}
           >
-            {carouselItems.map((product) => (
+            {launches.map((product) => (
               <LaunchProductCard
                 key={product.id}
                 product={product}
