@@ -14,7 +14,7 @@ class CategoriesService {
       parentId: db.parent_id ?? null,
       slug: db.slug,
       description: db.description,
-      order: db.order ?? 0,
+      order: db.order ?? 0,A
     };
   }
 
