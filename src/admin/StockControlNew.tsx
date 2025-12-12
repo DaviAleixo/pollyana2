@@ -2,22 +2,19 @@ import { useEffect, useState } from 'react';
 import { Plus, Minus, AlertTriangle } from 'lucide-react';
 import { productsService } from '../services/products.service';
 import { categoriesService } from '../services/categories.service';
-import { Product, Category } from '../types';
+import { Product } from '../types';
 
 type SortField = 'nome' | 'estoque';
 type SortOrder = 'asc' | 'desc';
 
 export default function StockControlNew() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [sortField, setSortField] = useState<SortField>('nome');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [expandedProduct, setExpandedProduct] = useState<number | null>(null);
 
-  // Carregar produtos e categorias
   useEffect(() => {
     loadProducts();
-    loadCategories();
   }, []);
 
   const loadProducts = async () => {
@@ -38,19 +35,8 @@ export default function StockControlNew() {
     }
   };
 
-  const loadCategories = async () => {
-    try {
-      const list = await categoriesService.getAll();
-      setCategories(list);
-    } catch (err) {
-      console.error("Erro ao carregar categorias:", err);
-      setCategories([]);
-    }
-  };
-
-  // Pega nome da categoria
   const getCategoryName = (categoryId: number): string => {
-    const category = categories.find((c) => c.id === categoryId);
+    const category = categoriesService.getAll().find((c) => c.id === categoryId);
     return category?.nome || 'Sem categoria';
   };
 
@@ -61,22 +47,44 @@ export default function StockControlNew() {
     return product.estoque || 0;
   };
 
-  const updateVariantStock = (productId: number, variantId: string, delta: number) => {
-    const product = products.find(p => p.id === productId);
-    if (!product || !product.variants) return;
+  // ⚡ Atualizado para ser instantâneo e MUITO mais rápido
+  const updateVariantStock = async (productId: number, variantId: string, delta: number) => {
+    // 1 — Atualiza a UI instantaneamente
+    setProducts(prev =>
+      prev.map(p => {
+        if (p.id !== productId) return p;
 
-    const updatedVariants = product.variants.map(v =>
-      v.id === variantId ? { ...v, estoque: Math.max(0, v.estoque + delta) } : v
+        const updatedVariants = p.variants?.map(v =>
+          v.id === variantId ? { ...v, estoque: Math.max(0, v.estoque + delta) } : v
+        );
+
+        return {
+          ...p,
+          variants: updatedVariants,
+          estoque: updatedVariants?.reduce((sum, v) => sum + v.estoque, 0) || 0,
+        };
+      })
     );
 
-    const updatedProduct = {
-      ...product,
-      variants: updatedVariants,
-      estoque: updatedVariants.reduce((sum, v) => sum + v.estoque, 0),
-    };
+    // 2 — Salva no Supabase em segundo plano
+    try {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
 
-    productsService.update(productId, updatedProduct);
-    loadProducts();
+      const updatedVariants = product.variants?.map(v =>
+        v.id === variantId ? { ...v, estoque: Math.max(0, v.estoque + delta) } : v
+      );
+
+      const updatedProduct = {
+        ...product,
+        variants: updatedVariants,
+        estoque: updatedVariants?.reduce((sum, v) => sum + v.estoque, 0) || 0,
+      };
+
+      await productsService.update(productId, updatedProduct);
+    } catch (err) {
+      console.error("Erro ao atualizar estoque no Supabase:", err);
+    }
   };
 
   const handleSort = (field: SortField) => {
@@ -163,7 +171,9 @@ export default function StockControlNew() {
                           )}
                         </td>
 
-                        <td className="px-4 py-4 font-medium">{product.nome}</td>
+                        <td className="px-4 py-4 font-medium">
+                          {product.nome}
+                        </td>
 
                         <td className="px-4 py-4">
                           {getCategoryName(product.categoriaId)}
@@ -202,13 +212,17 @@ export default function StockControlNew() {
                                     <td className="px-4 py-2">
                                       <div className="flex justify-center gap-2">
                                         <button
-                                          onClick={() => updateVariantStock(product.id, variant.id, 1)}
+                                          onClick={() =>
+                                            updateVariantStock(product.id, variant.id, 1)
+                                          }
                                           className="bg-green-600 text-white p-1.5"
                                         >
                                           <Plus className="w-3 h-3" />
                                         </button>
                                         <button
-                                          onClick={() => updateVariantStock(product.id, variant.id, -1)}
+                                          onClick={() =>
+                                            updateVariantStock(product.id, variant.id, -1)
+                                          }
                                           className="bg-red-600 text-white p-1.5"
                                           disabled={variant.estoque === 0}
                                         >
