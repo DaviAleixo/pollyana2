@@ -12,15 +12,30 @@ import { Product, Category } from '../../types';
 export default function ProductsList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Carregar produtos e categorias
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    setProducts(productsService.getAll());
-    setCategories(categoriesService.getAll());
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [productsData, categoriesData] = await Promise.all([
+        productsService.getAll(),
+        categoriesService.getAll()
+      ]);
+      
+      setProducts(Array.isArray(productsData) ? productsData : []);
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      setProducts([]);
+      setCategories([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Obter nome da categoria por ID
@@ -30,24 +45,47 @@ export default function ProductsList() {
   };
 
   // Excluir produto
-  const handleDelete = (id: number, nome: string) => {
+  const handleDelete = async (id: number, nome: string) => {
     if (window.confirm(`Deseja realmente excluir o produto "${nome}"?`)) {
-      productsService.delete(id);
-      loadData();
+      try {
+        await productsService.delete(id);
+        await loadData();
+      } catch (error) {
+        console.error('Erro ao excluir produto:', error);
+        alert('Erro ao excluir produto');
+      }
     }
   };
 
   // Alternar status ativo
-  const handleToggleActive = (id: number) => {
-    productsService.toggleActive(id);
-    loadData();
+  const handleToggleActive = async (id: number) => {
+    try {
+      await productsService.toggleActive(id);
+      await loadData();
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
+      alert('Erro ao alterar status do produto');
+    }
   };
 
   // Alternar visibilidade
-  const handleToggleVisible = (id: number) => {
-    productsService.toggleVisible(id);
-    loadData();
+  const handleToggleVisible = async (id: number) => {
+    try {
+      await productsService.toggleVisible(id);
+      await loadData();
+    } catch (error) {
+      console.error('Erro ao alterar visibilidade:', error);
+      alert('Erro ao alterar visibilidade do produto');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -100,10 +138,23 @@ export default function ProductsList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {products.length === 0 ? (
+              {!Array.isArray(products) || products.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-gray-500">
-                    Nenhum produto cadastrado
+                  <td colSpan={8} className="text-center py-12">
+                    <div className="text-gray-500">
+                      <p className="text-lg font-medium mb-2">
+                        Nenhum produto cadastrado
+                      </p>
+                      <p className="text-sm mb-4">
+                        Comece adicionando seu primeiro produto
+                      </p>
+                      <Link
+                        to="/admin/produtos/novo"
+                        className="inline-block bg-black text-white px-6 py-2 hover:bg-gray-800 transition-colors"
+                      >
+                        + Adicionar Produto
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -112,9 +163,12 @@ export default function ProductsList() {
                     {/* Imagem */}
                     <td className="px-6 py-4">
                       <img
-                        src={product.imagem}
+                        src={product.imagem || 'https://via.placeholder.com/64'}
                         alt={product.nome}
                         className="w-16 h-16 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://via.placeholder.com/64';
+                        }}
                       />
                     </td>
 
