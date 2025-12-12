@@ -13,23 +13,27 @@ export default function BannersList() {
     loadData();
   }, []);
 
-  const loadData = () => {
-    const data = bannersService.getAll(false);
+  // 🔥 CARREGAMENTO CORRETO (AGORA É ASSÍNCRONO)
+  const loadData = async () => {
+    const data = await bannersService.getAll(false);
 
-    // 🔥 Garante que sempre será exibido na ordem correta
-    const sorted = [...data].sort((a, b) => a.order - b.order);
-
-    setBanners(sorted);
+    setBanners(
+      Array.isArray(data)
+        ? [...data].sort((a, b) => a.order - b.order)
+        : []
+    );
   };
 
   const getLinkDescription = (banner: Banner) => {
     switch (banner.linkType) {
-      case 'product':
+      case 'product': {
         const product = productsService.getById(banner.linkedProductId!);
         return `Produto: ${product?.nome || 'Não encontrado'}`;
-      case 'category':
+      }
+      case 'category': {
         const category = categoriesService.getById(banner.linkedCategoryId!);
         return `Categoria: ${category?.nome || 'Não encontrada'}`;
+      }
       case 'external':
         return `Link Externo: ${banner.externalUrl}`;
       case 'informational':
@@ -39,36 +43,33 @@ export default function BannersList() {
     }
   };
 
-  const handleDelete = (id: number, textOverlay?: string) => {
+  const handleDelete = async (id: number, textOverlay?: string) => {
     if (window.confirm(`Deseja realmente excluir o banner "${textOverlay || id}"?`)) {
-      bannersService.delete(id);
-      loadData();
+      await bannersService.delete(id);
+      await loadData();
     }
   };
 
-  const handleToggleVisibility = (id: number) => {
-    bannersService.toggleVisibility(id);
-    loadData();
+  const handleToggleVisibility = async (id: number) => {
+    await bannersService.toggleVisibility(id);
+    await loadData();
   };
 
-  const handleMoveBanner = (id: number, direction: 'up' | 'down') => {
-    const currentBanners = [...banners];
-    const index = currentBanners.findIndex(b => b.id === id);
-
+  const handleMoveBanner = async (id: number, direction: 'up' | 'down') => {
+    const current = [...banners];
+    const index = current.findIndex(b => b.id === id);
     if (index === -1) return;
 
     const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= current.length) return;
 
-    if (newIndex >= 0 && newIndex < currentBanners.length) {
-      const bannerToMove = currentBanners[index];
-      const otherBanner = currentBanners[newIndex];
+    const bannerA = current[index];
+    const bannerB = current[newIndex];
 
-      // Troca a ordem no banco/localStorage
-      bannersService.update(bannerToMove.id, { order: otherBanner.order });
-      bannersService.update(otherBanner.id, { order: bannerToMove.order });
+    await bannersService.update(bannerA.id, { order: bannerB.order });
+    await bannersService.update(bannerB.id, { order: bannerA.order });
 
-      loadData(); // Recarrega já ordenado
-    }
+    await loadData();
   };
 
   return (
@@ -113,6 +114,7 @@ export default function BannersList() {
                 </th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-gray-200">
               {banners.length === 0 ? (
                 <tr>
@@ -125,7 +127,10 @@ export default function BannersList() {
                   <tr key={banner.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <img
-                        src={banner.imageUrl || 'https://via.placeholder.com/100x50?text=Sem+Imagem'}
+                        src={
+                          banner.imageUrl ||
+                          'https://via.placeholder.com/100x50?text=Sem+Imagem'
+                        }
                         alt={banner.textOverlay || `Banner ${banner.id}`}
                         className="w-24 h-12 object-cover"
                       />
@@ -172,7 +177,11 @@ export default function BannersList() {
                             : 'text-gray-400 hover:bg-gray-50'
                         }`}
                       >
-                        {banner.isVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                        {banner.isVisible ? (
+                          <Eye className="w-5 h-5" />
+                        ) : (
+                          <EyeOff className="w-5 h-5" />
+                        )}
                       </button>
                     </td>
 
@@ -197,6 +206,7 @@ export default function BannersList() {
                 ))
               )}
             </tbody>
+
           </table>
         </div>
       </div>
