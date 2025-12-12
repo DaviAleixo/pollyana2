@@ -8,10 +8,10 @@ export default function CategoriesList() {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const loadData = useCallback(() => {
-    const fetchedCategories = categoriesService.getAll();
-    setAllCategories(fetchedCategories);
-  }, []);
+  const loadData = useCallback(async () => {
+  const fetchedCategories = await categoriesService.getAll();
+  setAllCategories(Array.isArray(fetchedCategories) ? fetchedCategories : []);
+}, []);
 
   useEffect(() => {
     loadData();
