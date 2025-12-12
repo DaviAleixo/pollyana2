@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react';
 import { Plus, Minus, AlertTriangle } from 'lucide-react';
 import { productsService } from '../services/products.service';
 import { categoriesService } from '../services/categories.service';
-import { Product, ProductVariant } from '../types';
-
-// Página dedicada para controle de estoque com suporte a variações
-// Mostra estoque total + detalhamento por cor e tamanho
+import { Product } from '../types';
 
 type SortField = 'nome' | 'estoque';
 type SortOrder = 'asc' | 'desc';
@@ -20,9 +17,23 @@ export default function StockControlNew() {
     loadProducts();
   }, []);
 
-  const loadProducts = () => {
-    const allProducts = productsService.getAll();
-    setProducts(allProducts);
+  const loadProducts = async () => {
+    try {
+      const result = await productsService.getAll();
+
+      // Se vier { data: [...] }
+      const array =
+        Array.isArray(result)
+          ? result
+          : Array.isArray(result?.data)
+          ? result.data
+          : [];
+
+      setProducts(array);
+    } catch (err) {
+      console.error("Erro ao carregar produtos:", err);
+      setProducts([]); // fallback seguro
+    }
   };
 
   const getCategoryName = (categoryId: number): string => {
@@ -30,7 +41,6 @@ export default function StockControlNew() {
     return category?.nome || 'Sem categoria';
   };
 
-  // Calcular estoque total do produto (soma de todas as variações)
   const getTotalStock = (product: Product): number => {
     if (product.variants && product.variants.length > 0) {
       return product.variants.reduce((sum, v) => sum + v.estoque, 0);
@@ -38,7 +48,6 @@ export default function StockControlNew() {
     return product.estoque || 0;
   };
 
-  // Atualizar estoque de uma variação específica
   const updateVariantStock = (productId: number, variantId: string, delta: number) => {
     const product = products.find(p => p.id === productId);
     if (!product || !product.variants) return;
@@ -57,7 +66,6 @@ export default function StockControlNew() {
     loadProducts();
   };
 
-  // Ordenação
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -79,7 +87,6 @@ export default function StockControlNew() {
     return sortOrder === 'asc' ? comparison : -comparison;
   });
 
-  // Toggle expandir produto
   const toggleExpand = (productId: number) => {
     setExpandedProduct(expandedProduct === productId ? null : productId);
   };
@@ -96,44 +103,30 @@ export default function StockControlNew() {
         </p>
       </div>
 
-      {/* Tabela de estoque */}
+      {/* Tabela */}
       <div className="bg-white border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 sm:px-6 py-3 text-sm font-semibold text-gray-700 w-8"></th>
-                <th className="text-left px-4 sm:px-6 py-3 text-sm font-semibold text-gray-700">
-                  <button
-                    onClick={() => handleSort('nome')}
-                    className="flex items-center gap-1 hover:text-black"
-                  >
-                    Produto
-                    {sortField === 'nome' && (
-                      <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                    )}
+                <th className="px-4 w-8"></th>
+                <th className="px-4">
+                  <button onClick={() => handleSort('nome')}>
+                    Produto {sortField === 'nome' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
                   </button>
                 </th>
-                <th className="text-left px-4 sm:px-6 py-3 text-sm font-semibold text-gray-700">
-                  Categoria
-                </th>
-                <th className="text-center px-4 sm:px-6 py-3 text-sm font-semibold text-gray-700">
-                  <button
-                    onClick={() => handleSort('estoque')}
-                    className="flex items-center gap-1 hover:text-black mx-auto"
-                  >
-                    Estoque Total
-                    {sortField === 'estoque' && (
-                      <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                    )}
+                <th className="px-4">Categoria</th>
+                <th className="px-4 text-center">
+                  <button onClick={() => handleSort('estoque')}>
+                    Estoque Total {sortField === 'estoque' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
                   </button>
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y">
               {sortedProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-12 text-gray-500">
+                  <td colSpan={4} className="py-12 text-center text-gray-500">
                     Nenhum produto cadastrado
                   </td>
                 </tr>
@@ -145,109 +138,81 @@ export default function StockControlNew() {
 
                   return (
                     <>
-                      {/* Linha principal do produto */}
                       <tr key={product.id} className="hover:bg-gray-50">
-                        {/* Botão expandir */}
-                        <td className="px-4 sm:px-6 py-4">
+                        <td className="px-4 py-4">
                           {hasVariants && (
                             <button
                               onClick={() => toggleExpand(product.id)}
-                              className="text-gray-600 hover:text-black transition-colors"
+                              className="text-lg font-bold"
                             >
-                              <span className="text-lg font-bold">
-                                {isExpanded ? '−' : '+'}
-                              </span>
+                              {isExpanded ? '−' : '+'}
                             </button>
                           )}
                         </td>
 
-                        {/* Nome do produto */}
-                        <td className="px-4 sm:px-6 py-4">
-                          <p className="font-medium text-gray-900 text-sm sm:text-base">
-                            {product.nome}
-                          </p>
+                        <td className="px-4 py-4 font-medium">
+                          {product.nome}
                         </td>
 
-                        {/* Categoria */}
-                        <td className="px-4 sm:px-6 py-4 text-gray-700 text-sm">
+                        <td className="px-4 py-4">
                           {getCategoryName(product.categoriaId)}
                         </td>
 
-                        {/* Estoque total */}
-                        <td className="px-4 sm:px-6 py-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
+                        <td className="px-4 py-4 text-center">
+                          <div className="flex justify-center gap-2">
                             {totalStock <= 5 && (
                               <AlertTriangle className="w-4 h-4 text-red-600" />
                             )}
-                            <span
-                              className={`font-bold text-lg ${
-                                totalStock <= 5
-                                  ? 'text-red-600'
-                                  : 'text-gray-900'
-                              }`}
-                            >
+                            <span className={`font-bold ${totalStock <= 5 ? 'text-red-600' : ''}`}>
                               {totalStock}
                             </span>
                           </div>
                         </td>
                       </tr>
 
-                      {/* Linhas de variações (expandidas) */}
                       {isExpanded && hasVariants && (
                         <tr>
                           <td colSpan={4} className="px-6 py-4 bg-gray-50">
-                            <div className="overflow-x-auto">
-                              <table className="w-full">
-                                <thead className="bg-gray-100 border-b border-gray-300">
-                                  <tr>
-                                    <th className="text-left px-4 py-2 text-xs font-semibold text-gray-700">
-                                      Cor
-                                    </th>
-                                    <th className="text-left px-4 py-2 text-xs font-semibold text-gray-700">
-                                      Tamanho
-                                    </th>
-                                    <th className="text-center px-4 py-2 text-xs font-semibold text-gray-700">
-                                      Estoque
-                                    </th>
-                                    <th className="text-center px-4 py-2 text-xs font-semibold text-gray-700">
-                                      Ações
-                                    </th>
+                            <table className="w-full">
+                              <thead>
+                                <tr>
+                                  <th className="px-4 py-2 text-left">Cor</th>
+                                  <th className="px-4 py-2 text-left">Tamanho</th>
+                                  <th className="px-4 py-2 text-center">Estoque</th>
+                                  <th className="px-4 py-2 text-center">Ações</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {product.variants.map((variant) => (
+                                  <tr key={variant.id}>
+                                    <td className="px-4 py-2">{variant.cor}</td>
+                                    <td className="px-4 py-2">{variant.tamanho}</td>
+                                    <td className="px-4 py-2 text-center">{variant.estoque}</td>
+                                    <td className="px-4 py-2">
+                                      <div className="flex justify-center gap-2">
+                                        <button
+                                          onClick={() =>
+                                            updateVariantStock(product.id, variant.id, 1)
+                                          }
+                                          className="bg-green-600 text-white p-1.5"
+                                        >
+                                          <Plus className="w-3 h-3" />
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            updateVariantStock(product.id, variant.id, -1)
+                                          }
+                                          className="bg-red-600 text-white p-1.5"
+                                          disabled={variant.estoque === 0}
+                                        >
+                                          <Minus className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    </td>
                                   </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                  {product.variants?.map((variant) => (
-                                    <tr key={variant.id} className="hover:bg-white">
-                                      <td className="px-4 py-2 text-sm">{variant.cor}</td>
-                                      <td className="px-4 py-2 text-sm">{variant.tamanho}</td>
-                                      <td className="px-4 py-2 text-center">
-                                        <span className="font-semibold text-sm">
-                                          {variant.estoque}
-                                        </span>
-                                      </td>
-                                      <td className="px-4 py-2">
-                                        <div className="flex items-center justify-center gap-2">
-                                          <button
-                                            onClick={() => updateVariantStock(product.id, variant.id, 1)}
-                                            className="bg-green-600 text-white p-1.5 hover:bg-green-700 transition-colors"
-                                            title="Adicionar 1"
-                                          >
-                                            <Plus className="w-3.5 h-3.5" />
-                                          </button>
-                                          <button
-                                            onClick={() => updateVariantStock(product.id, variant.id, -1)}
-                                            className="bg-red-600 text-white p-1.5 hover:bg-red-700 transition-colors"
-                                            title="Remover 1"
-                                            disabled={variant.estoque === 0}
-                                          >
-                                            <Minus className="w-3.5 h-3.5" />
-                                          </button>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
+                                ))}
+                              </tbody>
+                            </table>
                           </td>
                         </tr>
                       )}
@@ -257,28 +222,6 @@ export default function StockControlNew() {
               )}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      {/* Legenda */}
-      <div className="mt-4 p-4 bg-gray-50 border border-gray-200">
-        <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-600" />
-            <span>Estoque baixo (≤ 5 unidades)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Plus className="w-4 h-4 text-green-600" />
-            <span>Adicionar estoque</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Minus className="w-4 h-4 text-red-600" />
-            <span>Remover estoque</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-bold">+</span>
-            <span>Expandir para ver variações</span>
-          </div>
         </div>
       </div>
     </div>
