@@ -4,9 +4,6 @@ import { productsService } from '../services/products.service';
 import { clicksService } from '../services/clicks.service';
 import { ProductWithStats } from '../types';
 
-// Página de relatórios simplificada
-// Mostra apenas Produto e Cliques, ordenado por maior número de cliques
-
 type SortOrder = 'desc' | 'asc';
 
 export default function Reports() {
@@ -18,12 +15,16 @@ export default function Reports() {
     loadData();
   }, [sortOrder]);
 
-  const loadData = () => {
-    const products = productsService.getAll();
+  const loadData = async () => {
+    // 🔥 Agora é assíncrono
+    const products = await productsService.getAll();
     const clicks = clicksService.getAll();
 
+    // Garantir que products seja array
+    const safeProducts = Array.isArray(products) ? products : [];
+
     // Combinar produtos com estatísticas de cliques
-    const withStats: ProductWithStats[] = products.map((product) => {
+    const withStats: ProductWithStats[] = safeProducts.map((product) => {
       const clickCount = clicks[product.id]?.clicks || 0;
 
       return {
@@ -47,7 +48,6 @@ export default function Reports() {
     setTotalClicks(total);
   };
 
-  // Alternar ordenação
   const toggleSort = () => {
     setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
   };
@@ -76,7 +76,7 @@ export default function Reports() {
         </p>
       </div>
 
-      {/* Tabela simplificada */}
+      {/* Tabela */}
       <div className="bg-white border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -109,12 +109,10 @@ export default function Reports() {
               ) : (
                 productsWithStats.map((product, index) => (
                   <tr key={product.id} className="hover:bg-gray-50">
-                    {/* Posição */}
                     <td className="px-4 sm:px-6 py-4 text-gray-500 font-medium text-sm sm:text-base">
                       {index + 1}º
                     </td>
 
-                    {/* Nome do produto */}
                     <td className="px-4 sm:px-6 py-4">
                       <p className="font-medium text-gray-900 text-sm sm:text-base">
                         {product.nome}
@@ -124,7 +122,6 @@ export default function Reports() {
                       </p>
                     </td>
 
-                    {/* Total de cliques */}
                     <td className="px-4 sm:px-6 py-4 text-center">
                       <span
                         className={`inline-block px-3 sm:px-4 py-2 font-bold text-base sm:text-lg ${
@@ -144,12 +141,10 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Nota informativa */}
       <div className="mt-6 bg-gray-50 border border-gray-200 p-4">
         <p className="text-xs sm:text-sm text-gray-600">
           <strong>Nota:</strong> Os cliques são registrados quando um usuário
-          clica no botão "Comprar no WhatsApp" de cada produto no catálogo
-          público.
+          clica no botão "Comprar no WhatsApp".
         </p>
       </div>
     </div>
