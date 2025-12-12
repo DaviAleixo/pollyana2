@@ -32,11 +32,11 @@ export default function ProductCatalog({ allProducts, categories, selectedCatego
 
   // Carregar banners visíveis e configurar listener para mudanças no storage
   useEffect(() => {
-    const loadBanners = () => {
-      const banners = bannersService.getAll(true); // Pega apenas banners visíveis e ordenados
+    const loadBanners = async () => {
+      const banners = await bannersService.getAll(true);
       setVisibleBanners(banners);
       if (banners.length > 0) {
-        setCurrentBannerIndex(prev => (prev < banners.length ? prev : 0)); // Ajusta o índice se o número de banners mudar
+        setCurrentBannerIndex(prev => (prev < banners.length ? prev : 0));
       } else {
         setCurrentBannerIndex(0);
       }
@@ -68,13 +68,15 @@ export default function ProductCatalog({ allProducts, categories, selectedCatego
 
   // Efeito para aplicar o filtro de categoria e busca combinados, e a ordenação
   useEffect(() => {
-    let currentFiltered = allProducts;
+    const filterProducts = async () => {
+      let currentFiltered = allProducts;
 
-    // 1. Filtrar por categoria (incluindo subcategorias)
-    if (selectedCategory !== 1) { // 'Todos' tem id 1
-      const categoryAndDescendantIds = categoriesService.getDescendants(selectedCategory).map(c => c.id);
-      currentFiltered = currentFiltered.filter((p) => categoryAndDescendantIds.includes(p.categoriaId));
-    }
+      // 1. Filtrar por categoria (incluindo subcategorias)
+      if (selectedCategory !== 1) {
+        const descendants = await categoriesService.getDescendants(selectedCategory);
+        const categoryAndDescendantIds = descendants.map(c => c.id);
+        currentFiltered = currentFiltered.filter((p) => categoryAndDescendantIds.includes(p.categoriaId));
+      }
 
     // 2. Filtrar por termo de busca
     const lowerCaseSearchTerm = searchTerm.toLowerCase().trim();
@@ -109,14 +111,17 @@ export default function ProductCatalog({ allProducts, categories, selectedCatego
     }
     // 'default' não aplica ordenação adicional, mantendo a ordem original após os filtros.
 
-    // 4. Se estiver na categoria "Todos" e houver lançamentos, remover produtos de lançamento do grid
-    // para evitar duplicação (eles aparecem no carrossel de lançamentos)
-    if (selectedCategory === 1) {
-      sortedProducts = sortedProducts.filter(product => !isLaunchValid(product));
-    }
+      // 4. Se estiver na categoria "Todos" e houver lançamentos, remover produtos de lançamento do grid
+      // para evitar duplicação (eles aparecem no carrossel de lançamentos)
+      if (selectedCategory === 1) {
+        sortedProducts = sortedProducts.filter(product => !isLaunchValid(product));
+      }
 
-    setFilteredProducts(sortedProducts);
-  }, [allProducts, categories, selectedCategory, searchTerm, sortOption]); // Adiciona sortOption como dependência
+      setFilteredProducts(sortedProducts);
+    };
+
+    filterProducts();
+  }, [allProducts, categories, selectedCategory, searchTerm, sortOption]);
 
   const handleOpenModal = (product: Product) => {
     setSelectedProduct(product);
@@ -134,11 +139,11 @@ export default function ProductCatalog({ allProducts, categories, selectedCatego
     }
   };
 
-  const handleBannerClick = (banner: Banner) => {
+  const handleBannerClick = async (banner: Banner) => {
     switch (banner.linkType) {
       case 'product':
         if (banner.linkedProductId) {
-          const product = productsService.getById(banner.linkedProductId);
+          const product = await productsService.getById(banner.linkedProductId);
           if (product) {
             handleOpenModal(product);
           }
@@ -146,7 +151,6 @@ export default function ProductCatalog({ allProducts, categories, selectedCatego
         break;
       case 'category':
         if (banner.linkedCategoryId) {
-          // A categoria já é selecionada via Sidebar, apenas rola para o catálogo
           document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
         }
         break;

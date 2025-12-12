@@ -4,8 +4,8 @@ import ProductCatalog from './components/ProductCatalog';
 import Benefits from './components/Benefits';
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar'; // Importação já existente
-// SearchBar não é mais importado aqui, pois foi movido para Navbar
+import Hero from './components/Hero';
+import Sidebar from './components/Sidebar';
 import CategoryNavbar from './components/CategoryNavbar';
 import CartPage from './pages/CartPage';
 import AdminLayout from './admin/AdminLayout';
@@ -81,7 +81,6 @@ function App() {
                 onSelectCategory={handleSelectCategory}
                 selectedCategoryId={selectedCategory}
               />
-              {/* Adicionando o Sidebar aqui */}
               <Sidebar
                 isOpen={sidebarOpen}
                 onClose={toggleSidebar}
@@ -89,13 +88,8 @@ function App() {
                 onSelectCategory={handleSelectCategory}
                 selectedCategoryId={selectedCategory}
               />
-              <div className="pt-16 lg:pt-[120px]"> {/* Ajustar padding top: 72px (Navbar) + 48px (CategoryNavbar) = 120px */}
-                <div className="px-4 pb-8 max-w-7xl mx-auto"> {/* Este div da SearchBar agora está vazio e pode ser removido se não houver outro conteúdo */}
-                  {/* SearchBar foi movida para Navbar */}
-                </div>
-                
-                {/* O carrossel de lançamentos agora é renderizado dentro do ProductCatalog */}
-
+              <div className="pt-[136px] lg:pt-28">
+                <Hero />
                 <ProductCatalog
                   allProducts={allProducts}
                   categories={categories}
@@ -120,7 +114,7 @@ function App() {
               onSelectCategory={handleSelectCategory}
               selectedCategoryId={selectedCategory}
             />
-            <div className="pt-16">
+            <div className="pt-[88px] lg:pt-16">
               <CartPage />
             </div>
             <WhatsAppButton />

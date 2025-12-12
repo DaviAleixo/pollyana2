@@ -1,92 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { categoriesService } from '../services/categories.service';
 import { Category } from '../types';
 
-export default function CategoryNavbar() {
-  const [categories, setCategories] = useState<Category[]>([]);
+interface CategoryNavbarProps {
+  categories: Category[];
+  onSelectCategory: (categoryId: number) => void;
+  selectedCategoryId: number;
+}
+
+export default function CategoryNavbar({ categories, onSelectCategory, selectedCategoryId }: CategoryNavbarProps) {
   const [subcategories, setSubcategories] = useState<Record<number, Category[]>>({});
   const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        setLoading(true);
-        
-        // Carrega categorias de nível superior
-        const topLevel = await categoriesService.getTopLevelCategories();
-        
-        // Validação extra: garante que é array
-        const validTopLevel = Array.isArray(topLevel) ? topLevel : [];
-        const visibleCategories = validTopLevel.filter(c => c && c.visivel);
-        
-        setCategories(visibleCategories);
+    const loadSubcategories = async () => {
+      const subsMap: Record<number, Category[]> = {};
 
-        // Carrega subcategorias para cada categoria
-        const subsMap: Record<number, Category[]> = {};
-        
-        for (const category of visibleCategories) {
-          if (category && category.id) {
-            try {
-              const subs = await categoriesService.getSubcategories(category.id);
-              // Validação extra: garante que é array
-              const validSubs = Array.isArray(subs) ? subs : [];
-              subsMap[category.id] = validSubs.filter(c => c && c.visivel);
-            } catch (subError) {
-              console.error(`Erro ao carregar subcategorias da categoria ${category.id}:`, subError);
-              subsMap[category.id] = [];
-            }
-          }
+      for (const category of categories) {
+        if (category && category.id) {
+          const subs = await categoriesService.getSubcategories(category.id);
+          subsMap[category.id] = Array.isArray(subs) ? subs.filter(c => c && c.visivel) : [];
         }
-        
-        setSubcategories(subsMap);
-      } catch (error) {
-        console.error('Erro ao carregar categorias:', error);
-        setCategories([]);
-        setSubcategories({});
-      } finally {
-        setLoading(false);
       }
+
+      setSubcategories(subsMap);
     };
 
-    loadCategories();
+    if (categories.length > 0) {
+      loadSubcategories();
+    }
+  }, [categories]);
 
-    // Recarrega quando houver mudanças
-    const handleStorageChange = () => {
-      loadCategories();
-    };
+  const topLevelCategories = categories.filter(c => c.parentId === null || c.parentId === undefined);
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
-
-  if (loading) {
+  if (!Array.isArray(topLevelCategories) || topLevelCategories.length === 0) {
     return (
-      <nav className="bg-white border-b border-gray-200">
+      <nav className="fixed top-[88px] lg:top-16 left-0 w-full bg-white border-b border-gray-200 z-30">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-center items-center h-14">
-            <div className="animate-pulse text-gray-400">Carregando categorias...</div>
-          </div>
-        </div>
-      </nav>
-    );
-  }
-
-  if (!Array.isArray(categories) || categories.length === 0) {
-    return (
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-center space-x-8 h-14 overflow-x-auto">
-            <Link
-              to="/catalogo"
+          <div className="flex items-center justify-center space-x-8 h-12 overflow-x-auto">
+            <button
+              onClick={() => onSelectCategory(1)}
               className="text-sm font-medium text-gray-700 hover:text-black transition-colors whitespace-nowrap"
             >
               TODAS AS CATEGORIAS
-            </Link>
+            </button>
           </div>
         </div>
       </nav>
@@ -94,23 +51,24 @@ export default function CategoryNavbar() {
   }
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <nav className="fixed top-[88px] lg:top-16 left-0 w-full bg-white border-b border-gray-200 z-30">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-center space-x-8 h-14 overflow-x-auto">
-          {/* Link para "Todas" */}
-          <Link
-            to="/catalogo"
-            className="text-sm font-medium text-gray-700 hover:text-black transition-colors whitespace-nowrap"
+        <div className="flex items-center justify-center space-x-8 h-12 overflow-x-auto scrollbar-hide">
+          <button
+            onClick={() => onSelectCategory(1)}
+            className={`text-sm font-medium transition-colors whitespace-nowrap ${
+              selectedCategoryId === 1 ? 'text-black border-b-2 border-black' : 'text-gray-600 hover:text-black'
+            }`}
           >
             TODAS
-          </Link>
+          </button>
 
-          {/* Categorias principais */}
-          {categories.map((category) => {
+          {topLevelCategories.map((category) => {
             if (!category || !category.id) return null;
 
             const categorySubcategories = subcategories[category.id] || [];
             const hasSubs = Array.isArray(categorySubcategories) && categorySubcategories.length > 0;
+            const isSelected = selectedCategoryId === category.id;
 
             return (
               <div
@@ -119,28 +77,28 @@ export default function CategoryNavbar() {
                 onMouseEnter={() => hasSubs && setHoveredCategory(category.id)}
                 onMouseLeave={() => setHoveredCategory(null)}
               >
-                <Link
-                  to={`/catalogo/${category.slug || category.id}`}
-                  className="flex items-center space-x-1 text-sm font-medium text-gray-700 hover:text-black transition-colors whitespace-nowrap"
+                <button
+                  onClick={() => onSelectCategory(category.id)}
+                  className={`text-sm font-medium transition-colors whitespace-nowrap ${
+                    isSelected ? 'text-black border-b-2 border-black' : 'text-gray-600 hover:text-black'
+                  }`}
                 >
-                  <span>{(category.nome || 'Sem nome').toUpperCase()}</span>
-                  {hasSubs && <ChevronDown className="w-4 h-4" />}
-                </Link>
+                  {(category.nome || 'Sem nome').toUpperCase()}
+                </button>
 
-                {/* Dropdown de subcategorias */}
                 {hasSubs && hoveredCategory === category.id && (
                   <div className="absolute left-0 top-full mt-2 bg-white border border-gray-200 shadow-lg rounded-md py-2 min-w-[200px] z-50">
                     {categorySubcategories.map((sub) => {
                       if (!sub || !sub.id) return null;
-                      
+
                       return (
-                        <Link
+                        <button
                           key={sub.id}
-                          to={`/catalogo/${sub.slug || sub.id}`}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          onClick={() => onSelectCategory(sub.id)}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                         >
                           {sub.nome || 'Sem nome'}
-                        </Link>
+                        </button>
                       );
                     })}
                   </div>
