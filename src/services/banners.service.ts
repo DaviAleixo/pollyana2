@@ -33,43 +33,44 @@ class BannersService {
     if (banner.externalUrl !== undefined) dbData.external_url = banner.externalUrl;
     return dbData;
   }
+  
+async getAll(onlyVisible: boolean = false): Promise<Banner[]> {
+  let query = supabase
+    .from("banners")
+    .select("*")
+    .order("order", { ascending: true });
 
-  // Obter todos os banners, opcionalmente filtrando por visibilidade e ordenando
-  async getAll(onlyVisible: boolean = false): Promise<Banner[]> {
-    let query = supabase
-      .from('banners')
-      .select('*')
-      .order('order', { ascending: true });
-
-    if (onlyVisible) {
-      query = query.eq('is_visible', true);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Erro ao buscar banners:', error);
-      return [];
-    }
-
-    return data ? data.map(this.mapFromDB) : [];
+  if (onlyVisible) {
+    query = query.eq("is_visible", true);
   }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Erro ao buscar banners:", error);
+    return [];
+  }
+
+  return Array.isArray(data)
+    ? data.map((b) => this.mapFromDB(b))
+    : [];
+}
 
   // Obter banner por ID
   async getById(id: number): Promise<Banner | undefined> {
-    const { data, error } = await supabase
-      .from('banners')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
+  const { data, error } = await supabase
+    .from("banners")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
 
-    if (error) {
-      console.error('Erro ao buscar banner:', error);
-      return undefined;
-    }
-
-    return data ? this.mapFromDB(data) : undefined;
+  if (error) {
+    console.error("Erro ao buscar banner:", error);
+    return undefined;
   }
+
+  return data ? this.mapFromDB(data) : undefined;
+}
 
   // Criar novo banner
   async create(bannerData: Omit<Banner, 'id'>): Promise<Banner | null> {
