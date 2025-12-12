@@ -5,32 +5,34 @@ import { Category } from '../types';
 import { supabase } from '../lib/supabase';
 
 class CategoriesService {
-  // Converte os dados do banco para o formato esperado pela aplicação
+  // Converte do banco → aplicação
   private mapFromDB(dbCategory: any): Category {
     return {
       id: dbCategory.id,
       nome: dbCategory.nome,
       visivel: dbCategory.visivel,
-      parentId: dbCategory.parent_id,
+      parentId: dbCategory.parent_id ?? null,
       slug: dbCategory.slug,
       description: dbCategory.description,
-      order: dbCategory.order,
+      order: dbCategory.order ?? 0,
     };
   }
 
-  // Converte os dados da aplicação para o formato do banco
+  // Converte da aplicação → banco
   private mapToDB(category: Partial<Category>): any {
     const dbData: any = {};
+
     if (category.nome !== undefined) dbData.nome = category.nome;
     if (category.visivel !== undefined) dbData.visivel = category.visivel;
     if (category.parentId !== undefined) dbData.parent_id = category.parentId;
     if (category.slug !== undefined) dbData.slug = category.slug;
     if (category.description !== undefined) dbData.description = category.description;
     if (category.order !== undefined) dbData.order = category.order;
+
     return dbData;
   }
 
-  // Obter todas as categorias, ordenadas e com estrutura plana
+  // Buscar todas as categorias
   async getAll(): Promise<Category[]> {
     const { data, error } = await supabase
       .from('categories')
@@ -38,14 +40,14 @@ class CategoriesService {
       .order('order', { ascending: true });
 
     if (error) {
-      console.error('Erro ao buscar categorias:', error);
+      console.error('Erro ao buscar categorias:', error.message);
       return [];
     }
 
-    return data ? data.map(this.mapFromDB) : [];
+    return data ? data.map((c) => this.mapFromDB(c)) : [];
   }
 
-  // Obter categoria por ID
+  // Buscar categoria por ID
   async getById(id: number): Promise<Category | undefined> {
     const { data, error } = await supabase
       .from('categories')
@@ -54,14 +56,14 @@ class CategoriesService {
       .maybeSingle();
 
     if (error) {
-      console.error('Erro ao buscar categoria:', error);
+      console.error('Erro ao buscar categoria:', error.message);
       return undefined;
     }
 
     return data ? this.mapFromDB(data) : undefined;
   }
 
-  // Obter categorias de nível superior (sem pai)
+  // Categorias principais
   async getTopLevelCategories(): Promise<Category[]> {
     const { data, error } = await supabase
       .from('categories')
@@ -70,37 +72,32 @@ class CategoriesService {
       .order('order', { ascending: true });
 
     if (error) {
-      console.error('Erro ao buscar categorias de nível superior:', error);
+      console.error('Erro ao buscar categorias de nível superior:', error.message);
       return [];
     }
 
-    return data ? data.map(this.mapFromDB) : [];
+    return data ? data.map((c) => this.mapFromDB(c)) : [];
   }
 
-  // Obter subcategorias de uma categoria pai
+  // Buscar subcategorias
   async getSubcategories(parentId: number | null): Promise<Category[]> {
-    const query = supabase
-      .from('categories')
-      .select('*')
-      .order('order', { ascending: true });
+    const query = supabase.from('categories').select('*').order('order', { ascending: true });
 
-    if (parentId === null) {
-      query.is('parent_id', null);
-    } else {
-      query.eq('parent_id', parentId);
-    }
+    parentId === null
+      ? query.is('parent_id', null)
+      : query.eq('parent_id', parentId);
 
     const { data, error } = await query;
 
     if (error) {
-      console.error('Erro ao buscar subcategorias:', error);
+      console.error('Erro ao buscar subcategorias:', error.message);
       return [];
     }
 
-    return data ? data.map(this.mapFromDB) : [];
+    return data ? data.map((c) => this.mapFromDB(c)) : [];
   }
 
-  // Gerar slug a partir do nome
+  // Criar slug limpo
   private generateSlug(name: string): string {
     return name
       .toLowerCase()
@@ -112,19 +109,19 @@ class CategoriesService {
       .trim();
   }
 
-  // Criar nova categoria
+  // Criar categoria
   async create(categoryData: Omit<Category, 'id' | 'slug' | 'order'> & { parentId?: number | null }): Promise<Category | null> {
     const slug = this.generateSlug(categoryData.nome);
 
-    const siblings = await this.getSubcategories(categoryData.parentId || null);
-    const order = siblings.length > 0 ? Math.max(...siblings.map(s => s.order)) + 1 : 0;
+    const siblings = await this.getSubcategories(categoryData.parentId ?? null);
+    const order = siblings.length > 0 ? Math.max(...siblings.map((s) => s.order)) + 1 : 0;
 
     const newCategory = {
       nome: categoryData.nome,
-      visivel: categoryData.visivel,
-      parent_id: categoryData.parentId === undefined ? null : categoryData.parentId,
+      visivel: categoryData.visivel ?? true,
+      parent_id: categoryData.parentId ?? null,
       slug,
-      description: categoryData.description,
+      description: categoryData.description ?? null,
       order,
     };
 
@@ -135,19 +132,18 @@ class CategoriesService {
       .single();
 
     if (error) {
-      console.error('Erro ao criar categoria:', error);
+      console.error('Erro ao criar categoria:', error.message);
       return null;
     }
 
     return data ? this.mapFromDB(data) : null;
   }
 
-  // Atualizar categoria existente
+  // Atualizar categoria
   async update(id: number, categoryData: Partial<Omit<Category, 'slug'>>): Promise<Category | null> {
     if (id === 1) {
-      console.warn('Cannot edit default category');
-      const category = await this.getById(id);
-      return category || null;
+      console.warn('Não é permitido editar a categoria padrão');
+      return (await this.getById(id)) ?? null;
     }
 
     const updateData = this.mapToDB(categoryData);
@@ -164,7 +160,7 @@ class CategoriesService {
       .single();
 
     if (error) {
-      console.error('Erro ao atualizar categoria:', error);
+      console.error('Erro ao atualizar categoria:', error.message);
       return null;
     }
 
@@ -174,30 +170,26 @@ class CategoriesService {
   // Excluir categoria
   async delete(id: number): Promise<boolean> {
     if (id === 1) {
-      console.warn('Cannot delete default category');
+      console.warn('Não é permitido excluir a categoria padrão');
       return false;
     }
 
     const categoryToDelete = await this.getById(id);
     if (!categoryToDelete) return false;
 
+    // Reatribuir categorias filhas ao pai da categoria removida
     const children = await this.getSubcategories(id);
     for (const child of children) {
       await this.update(child.id, { parentId: categoryToDelete.parentId });
     }
 
-    await supabase
-      .from('products')
-      .update({ categoria_id: 1 })
-      .eq('categoria_id', id);
+    // Reatribuir produtos da categoria para a categoria padrão (id 1)
+    await supabase.from('products').update({ categoria_id: 1 }).eq('categoria_id', id);
 
-    const { error } = await supabase
-      .from('categories')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('categories').delete().eq('id', id);
 
     if (error) {
-      console.error('Erro ao deletar categoria:', error);
+      console.error('Erro ao deletar categoria:', error.message);
       return false;
     }
 
@@ -212,51 +204,40 @@ class CategoriesService {
     const oldSiblings = await this.getSubcategories(categoryToMove.parentId);
     for (const sibling of oldSiblings) {
       if (sibling.id !== categoryId && sibling.order > categoryToMove.order) {
-        await supabase
-          .from('categories')
-          .update({ order: sibling.order - 1 })
-          .eq('id', sibling.id);
+        await supabase.from('categories').update({ order: sibling.order - 1 }).eq('id', sibling.id);
       }
     }
 
     const newSiblings = await this.getSubcategories(newParentId);
     for (const sibling of newSiblings) {
       if (sibling.id !== categoryId && sibling.order >= newOrder) {
-        await supabase
-          .from('categories')
-          .update({ order: sibling.order + 1 })
-          .eq('id', sibling.id);
+        await supabase.from('categories').update({ order: sibling.order + 1 }).eq('id', sibling.id);
       }
     }
 
-    await supabase
-      .from('categories')
-      .update({ order: newOrder, parent_id: newParentId })
-      .eq('id', categoryId);
+    await supabase.from('categories').update({ order: newOrder, parent_id: newParentId }).eq('id', categoryId);
   }
 
-  // Obter todos os descendentes de uma categoria (incluindo ela mesma)
+  // Retorna a categoria e todos os descendentes
   async getDescendants(categoryId: number): Promise<Category[]> {
-    const allCategories = await this.getAll();
+    const all = await this.getAll();
     const descendants: Category[] = [];
-    const queue: number[] = [categoryId];
+    const queue = [categoryId];
 
-    while (queue.length > 0) {
-      const currentId = queue.shift();
-      if (currentId) {
-        const currentCategory = allCategories.find(c => c.id === currentId);
-        if (currentCategory) {
-          descendants.push(currentCategory);
-          const children = allCategories.filter(c => c.parentId === currentId);
-          children.forEach(child => queue.push(child.id));
-        }
+    while (queue.length) {
+      const id = queue.shift()!;
+      const category = all.find((c) => c.id === id);
+      if (category) {
+        descendants.push(category);
+        all.filter((c) => c.parentId === id).forEach((c) => queue.push(c.id));
       }
     }
+
     return descendants;
   }
 
-  // Inicializar categorias padrão se não existirem
   async initialize(): Promise<void> {
+    // Pode colocar seeds aqui se quiser futuramente
   }
 }
 
